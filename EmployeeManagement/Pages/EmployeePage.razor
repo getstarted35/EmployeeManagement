@@ -1,0 +1,127 @@
+﻿@page "/employees"
+@using System
+@using System.Linq
+@using static MudBlazor.CategoryTypes
+@inject MudBlazor.ISnackbar snackBar
+@inject IJSRuntime JsRuntime
+
+<h3>Departments</h3>
+<MudCard Elevation="25">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Employees</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <EditForm OnInvalidSubmit="Add" Model="@employee">
+            <MudGrid>
+                <MudItem xs="12" sm="4" md="6">
+                    <MudTextField @bind-Value="employee.FirstName" Label="First Name" Variant="Variant.Text"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" sm="4" md="6">
+                    <MudTextField @bind-Value="employee.LastName" Label="Last Name" Variant="Variant.Text"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" sm="4" md="6">
+                    <MudTextField @bind-Value="employee.ManNumber" Label="Man Number" Variant="Variant.Text"></MudTextField>
+                </MudItem>
+                <MudItem xs="12" sm="4" md="6">
+                    <MudSelect T="int" Label="Select Deparment" @bind-Value="employee.DeparmentId">
+                        @foreach (var deparment in deparments)
+                        {
+                            <MudSelectItem T="int" Value="@deparment.DeparmentId">@deparment.DeparmentName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+            <MudButton Color="Color.Info" Variant="Variant.Filled" OnClick="Add">Add Employee</MudButton>
+        </EditForm>
+    </MudCardContent>
+</MudCard>
+<br />
+<MudTable Items="GetAll()" Filter="new Func<Employee, bool>(Search)" @bind-employee="employee">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Employees</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search For Employees"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>First Name</MudTh>
+        <MudTh>Last Name</MudTh>
+        <MudTh>Man Number</MudTh>
+        <MudTh>Deparment</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="First Name">@context.FirstName</MudTd>
+        <MudTd DataLabel="Last Name">@context.LastName</MudTd>
+        <MudTd DataLabel="Man Number">@context.ManNumber</MudTd>
+        <MudTd DataLabel="Deparment Name">@context.Deparment.DeparmentName</MudTd>
+        <MudTd DataLabel="Actions">
+            <MudFab OnClick="@(()=>Update(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small"></MudFab>
+            <MudFab OnClick="@(()=>Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small"></MudFab>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private string searchString = "";
+    private Employee employee = new Employee();
+    private Deparment deparment = new Deparment();
+    private List<Employee> employees = new List<Employee>();
+    private List<Deparment> deparments = new List<Deparment>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        deparments = deparmentService.GetAll();
+        employees = employeeService.GetAll();
+    }
+
+    private bool Search(Employee employee)
+
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (employee.FirstName.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+        || employee.LastName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+
+        {
+            return true;
+        }
+        return false;
+    }        //Arama
+
+
+    private List<Employee> GetAll()
+    {
+        employees = employeeService.GetAll();
+        return employees;
+    }                // Listeleme
+
+
+    private void Add()                                 //Ekleme
+    {
+        if (employee.EmployeeId == 0)
+        {
+            employeeService.Add(employee);
+            snackBar.Add("Employee Added", Severity.Success);
+        }
+        else
+        {
+            employeeService.Update(employee);
+            snackBar.Add("Employee Updated", Severity.Success);
+        }
+        employee = new Employee();
+        GetAll();
+    }
+
+    private void Update(Employee record)              //Güncelleme
+    {
+        employee = record;
+        StateHasChanged();
+    }
+
+    private async Task Delete(Employee record)         //sil
+    {
+        employeeService.Delete(record);
+        GetAll();
+    }
+}

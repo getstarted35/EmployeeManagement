@@ -1,0 +1,100 @@
+﻿@page "/departments"
+@using System
+@using System.Linq
+@using static MudBlazor.CategoryTypes
+@inject MudBlazor.ISnackbar snackBar
+@inject IJSRuntime JsRuntime
+
+<h3>Departments</h3>
+<MudCard Elevation="25">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Departments</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <EditForm OnInvalidSubmit="Add" Model="@deparment">
+            <MudTextField @bind-Value="deparment.DeparmentName" Label="Name of Department"></MudTextField>
+            <br />
+            <MudButton Color="Color.Info" Variant="Variant.Filled" OnClick="Add">Add Department</MudButton>
+            
+        </EditForm>
+    </MudCardContent>
+</MudCard>
+<br />
+<MudTable Items="GetAll()" Filter="new Func<Deparment, bool>(Search)" @bind-deparment="deparment">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Employees</MudText>
+        <MudSpacer/>
+        <MudTextField @bind-Value="searchString" Placeholder="Search For Departments"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Department Name</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Deparment Name">@context.DeparmentName</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudFab OnClick="@(()=>Update(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small"></MudFab>
+                <MudFab OnClick="@(()=>Delete(context))" Color="Color.Error"   Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small"></MudFab>
+            </MudTd>
+        </RowTemplate> 
+</MudTable>
+
+@code {
+    private string searchString ="";
+    private Deparment deparment = new Deparment();
+    private List<Deparment> deparments = new List<Deparment>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        deparments = deparmentService.GetAll();
+    }
+
+    private bool Search(Deparment deparment)
+
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if(deparment.DeparmentName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }        //Arama
+
+
+    private List<Deparment> GetAll()
+    {
+        deparments = deparmentService.GetAll();
+        return deparments;
+    }                // Listeleme
+
+
+    private void Add()                                 //Ekleme
+    {
+        if(deparment.DeparmentId == 0)
+        {
+            deparmentService.Add(deparment);
+            snackBar.Add("Deparment Added", Severity.Success);
+        }
+        else
+        {
+            deparmentService.Update(deparment);
+            snackBar.Add("Deparment Updated", Severity.Success);
+        }
+        deparment = new Deparment();
+        GetAll();
+    }
+
+    private void Update(Deparment record)              //Güncelleme
+    {
+        deparment = record;
+        StateHasChanged();
+    }
+
+    private async Task Delete(Deparment record)         //sil 
+    {
+        deparmentService.Delete(record);
+        GetAll();
+    }
+}
